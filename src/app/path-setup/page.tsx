@@ -7,7 +7,7 @@ import { Checkbox } from "@/components/ui/checkbox";
 import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Check, Loader2, Sparkles } from "lucide-react";
+import { Check, Loader2, Sparkles, ArrowLeft } from "lucide-react";
 import { generateLearningPathQuestions, type GenerateLearningPathInput } from "@/app/actions";
 import { saveLearningPath, type GeneratedQuestion } from "@/lib/firebase-service";
 import { useToast } from "@/hooks/use-toast";
@@ -37,9 +37,10 @@ const experienceLevels = [
 ];
 
 const techStack = [
-    { id: "react", label: "React.js" },
+    { id: "javascript", label: "JavaScript" },
     { id: "typescript", label: "TypeScript" },
-    { id: "tailwind", label: "Tailwind CSS" },
+    { id: "react", label: "React.js" },
+    { id: "react-native", label: "React Native" },
     { id: "nextjs", label: "Next.js" },
     { id: "system-design", label: "System Design" },
 ];
@@ -154,13 +155,15 @@ export default function PathSetupPage() {
         <div className="flex-1 p-4 sm:p-6 lg:p-8 space-y-6">
             {/* Header */}
             <div>
-                <div className="flex items-center gap-2 text-sm text-muted-foreground mb-2">
-                    <span>SETUP</span>
-                    <span>/</span>
-                    <span>CONFIGURATION</span>
-                    <span>/</span>
-                    <span className="text-primary">PROFILE</span>
-                </div>
+                <Button
+                    variant="ghost"
+                    size="sm"
+                    className="mb-2 -ml-2 text-muted-foreground hover:text-foreground"
+                    onClick={() => router.push('/dashboard')}
+                >
+                    <ArrowLeft className="w-4 h-4 mr-1" />
+                    Back to Dashboard
+                </Button>
                 <h1 className="text-3xl font-headline font-bold">
                     Configure Your Roadmap
                 </h1>
@@ -362,7 +365,7 @@ export default function PathSetupPage() {
                             <Button
                                 size="lg"
                                 className="w-full bg-primary hover:bg-primary/90"
-                                onClick={handleGeneratePath}
+                                onClick={generatedQuestions.length > 0 ? () => router.push('/dashboard') : handleGeneratePath}
                                 disabled={isGenerating || selectedTech.length === 0}
                             >
                                 {isGenerating ? (
@@ -372,8 +375,7 @@ export default function PathSetupPage() {
                                     </>
                                 ) : generatedQuestions.length > 0 ? (
                                     <>
-                                        <Sparkles className="w-4 h-4 mr-2" />
-                                        Regenerate Learning Path
+                                        Checkout Questions →
                                     </>
                                 ) : (
                                     <>

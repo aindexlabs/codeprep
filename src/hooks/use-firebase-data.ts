@@ -204,6 +204,80 @@ export function useDailyChallenge() {
 }
 
 /**
+ * Hook to fetch a specific challenge by ID (or daily)
+ */
+export function useChallenge(id: string | null, userId: string | null, experienceLevel?: string | null) {
+    const [challenge, setChallenge] = useState<GeneratedQuestion | DailyChallenge | null>(null);
+    const [loading, setLoading] = useState(true);
+    const [error, setError] = useState<Error | null>(null);
+
+    useEffect(() => {
+        if (!id) {
+            setLoading(false);
+            return;
+        }
+
+        setLoading(true);
+
+        if (id === 'daily') {
+            const challengeRef = ref(database, 'dailyChallenge');
+            const unsubscribe = onValue(
+                challengeRef,
+                (snapshot) => {
+                    if (snapshot.exists()) {
+                        setChallenge(snapshot.val());
+                    } else {
+                        setChallenge(null);
+                    }
+                    setLoading(false);
+                },
+                (err) => {
+                    setError(err as Error);
+                    setLoading(false);
+                }
+            );
+            return () => off(challengeRef, 'value', unsubscribe);
+        } else if (userId) {
+            // Fetch from learning paths
+            const learningPathsRef = ref(database, `learningPaths/${userId}`);
+
+            const unsubscribe = onValue(
+                learningPathsRef,
+                (snapshot) => {
+                    if (snapshot.exists()) {
+                        const data = snapshot.val();
+                        const paths = Object.values(data) as LearningPath[];
+
+                        // Filter by experience level if provided
+                        const filteredPaths = experienceLevel
+                            ? paths.filter(p => p.experienceLevel === experienceLevel)
+                            : paths;
+
+                        // Flatten all questions from the relevant paths
+                        const allQuestions = filteredPaths.flatMap(p => p.questions || []);
+
+                        const found = allQuestions.find(q => q.id === id);
+                        setChallenge(found || null);
+                    } else {
+                        setChallenge(null);
+                    }
+                    setLoading(false);
+                },
+                (err) => {
+                    setError(err as Error);
+                    setLoading(false);
+                }
+            );
+            return () => off(learningPathsRef, 'value', unsubscribe);
+        } else {
+            setLoading(false);
+        }
+    }, [id, userId, experienceLevel]);
+
+    return { challenge, loading, error };
+}
+
+/**
  * Hook to fetch skill growth data
  */
 export function useSkillGrowth(userId: string | null) {
@@ -318,4 +392,108 @@ export function useFocusAreas(userId: string | null) {
     }, [userId]);
 
     return { focusAreas, loading, error };
+}
+
+/**
+ * Hook to derive performance data from learning paths
+ */
+export function usePerformanceData(userId: string | null) {
+    const [stats, setStats] = useState<{
+        problemsSolved: number;
+        successRate: number;
+        timeRemaining: string;
+        skillGrowth: SkillGrowthData[];
+        strengthWeakness: StrengthWeaknessData[];
+        focusAreas: FocusArea[];
+    } | null>(null);
+    const [loading, setLoading] = useState(true);
+
+    const { paths, loading: pathsLoading } = useLearningPaths(userId);
+
+    useEffect(() => {
+        if (!userId || pathsLoading) {
+            if (!userId) setLoading(false);
+            return;
+        }
+
+        // Aggregate all questions
+        const allQuestions = paths.flatMap(p => p.questions || []);
+        const completedQuestions = allQuestions.filter(q => q.status === 'completed');
+
+        // 1. Basic Stats
+        const problemsSolved = completedQuestions.length;
+        const successRate = allQuestions.length > 0
+            ? Math.round((problemsSolved / allQuestions.length) * 100)
+            : 0;
+
+        // Mock time remaining based on uncompleted questions (avg 30 mins per question)
+        const uncompletedCount = allQuestions.length - problemsSolved;
+        const totalMinutesRemaining = uncompletedCount * 30;
+        const hours = Math.floor(totalMinutesRemaining / 60);
+        const minutes = totalMinutesRemaining % 60;
+        const timeRemaining = `${hours}h ${minutes}m`;
+
+        // 2. Skill Growth (Distribution of Available vs Completed)
+        // For now, we'll show distribution of ALL questions as "Available" skills
+        const skillCounts: Record<string, number> = {};
+        allQuestions.forEach(q => {
+            const cat = q.category || 'General';
+            skillCounts[cat] = (skillCounts[cat] || 0) + 1;
+        });
+
+        const skillGrowth: SkillGrowthData[] = [
+            {
+                week: 'Current',
+                ...Object.keys(skillCounts).reduce((acc, key) => ({
+                    ...acc,
+                    [key]: skillCounts[key]
+                }), { JavaScript: 0, TypeScript: 0, React: 0 } as any)
+            }
+        ];
+
+        // 3. Strengths vs Weaknesses (Based on difficulty of completed)
+        // If no completed, show distribution by difficulty of available questions
+        const difficultyCounts: Record<string, number> = {};
+        allQuestions.forEach(q => {
+            const diff = q.difficulty || 'BEGINNER';
+            difficultyCounts[diff] = (difficultyCounts[diff] || 0) + 1;
+        });
+
+        const strengthWeakness: StrengthWeaknessData[] = [
+            { skill: 'Beginner', value: difficultyCounts['BEGINNER'] || 0 },
+            { skill: 'Intermediate', value: difficultyCounts['INTERMEDIATE'] || 0 },
+            { skill: 'Advanced', value: difficultyCounts['ADVANCED'] || 0 },
+        ];
+
+        // 4. Focus Areas (Categories with most uncompleted questions)
+        const focusAreaCounts: Record<string, number> = {};
+        allQuestions.filter(q => q.status !== 'completed').forEach(q => {
+            const cat = q.category || 'General';
+            focusAreaCounts[cat] = (focusAreaCounts[cat] || 0) + 1;
+        });
+
+        const focusAreas: FocusArea[] = Object.entries(focusAreaCounts)
+            .sort(([, a], [, b]) => b - a)
+            .slice(0, 3)
+            .map(([cat, count], index) => ({
+                id: `focus-${index}`,
+                title: `${cat} Mastery`,
+                description: `${count} uncompleted challenges`,
+                difficulty: 'INTERMEDIATE',
+                estimatedTime: `${count * 0.5}h`
+            }));
+
+        setStats({
+            problemsSolved,
+            successRate,
+            timeRemaining,
+            skillGrowth,
+            strengthWeakness,
+            focusAreas
+        });
+        setLoading(false);
+
+    }, [userId, paths, pathsLoading]);
+
+    return { stats, loading };
 }

@@ -2,10 +2,8 @@
 
 import * as React from "react";
 import { Radar, RadarChart, PolarGrid, PolarAngleAxis, PolarRadiusAxis, ResponsiveContainer } from "recharts";
-import type { StrengthWeaknessData } from "@/lib/mock-data";
-
 interface StrengthRadarChartProps {
-    data: StrengthWeaknessData[];
+    data: any[];
 }
 
 export function StrengthRadarChart({ data }: StrengthRadarChartProps) {

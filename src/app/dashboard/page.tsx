@@ -8,10 +8,12 @@ import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import { QuestionSetCard } from "@/components/ui/question-set-card";
 import { DifficultyBadge } from "@/components/ui/difficulty-badge";
 import { Clock, TrendingUp, Loader2 } from "lucide-react";
+import { useRouter } from "next/navigation";
 import { useUser } from "@/contexts/user-context";
 import { useDailyChallenge, useUserProgress, useLearningPaths } from "@/hooks/use-firebase-data";
 
 export default function DashboardPage() {
+    const router = useRouter();
     const { user } = useUser();
     const { challenge, loading: challengeLoading } = useDailyChallenge();
     const { progress, loading: progressLoading } = useUserProgress(user?.id || null);
@@ -90,7 +92,11 @@ export default function DashboardPage() {
                                 {challenge.description}
                             </p>
                             <div className="flex items-center gap-4">
-                                <Button size="lg" className="bg-primary hover:bg-primary/90">
+                                <Button
+                                    size="lg"
+                                    className="bg-primary hover:bg-primary/90"
+                                    onClick={() => router.push('/practice?id=daily')}
+                                >
                                     Start Challenge
                                 </Button>
                                 <DifficultyBadge level={challenge.difficulty} />
@@ -149,7 +155,11 @@ export default function DashboardPage() {
                                     })}
                                 </div>
 
-                                <Button variant="outline" className="w-full mt-4">
+                                <Button
+                                    variant="outline"
+                                    className="w-full mt-4"
+                                    onClick={() => router.push('/performance')}
+                                >
                                     View Full Stats
                                 </Button>
                             </>
@@ -185,7 +195,7 @@ export default function DashboardPage() {
                                     <QuestionSetCard
                                         key={set.id}
                                         questionSet={set}
-                                        onStart={() => console.log('Start:', set.id)}
+                                        onStart={() => router.push(`/practice?id=${set.id}`)}
                                     />
                                 ))}
                             </div>
@@ -198,7 +208,7 @@ export default function DashboardPage() {
                                             : `No ${selectedCategory} questions available`
                                         }
                                     </p>
-                                    <Button onClick={() => window.location.href = '/path-setup'}>
+                                    <Button onClick={() => router.push('/path-setup')}>
                                         Generate Learning Path
                                     </Button>
                                 </CardContent>

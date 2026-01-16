@@ -2,10 +2,8 @@
 
 import * as React from "react";
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer } from "recharts";
-import type { SkillGrowthData } from "@/lib/mock-data";
-
 interface SkillChartProps {
-    data: SkillGrowthData[];
+    data: any[];
 }
 
 export function SkillChart({ data }: SkillChartProps) {
@@ -14,7 +12,7 @@ export function SkillChart({ data }: SkillChartProps) {
             <LineChart data={data} margin={{ top: 5, right: 30, left: 20, bottom: 5 }}>
                 <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" />
                 <XAxis
-                    dataKey="date"
+                    dataKey="week"
                     stroke="hsl(var(--muted-foreground))"
                     style={{ fontSize: '12px' }}
                 />

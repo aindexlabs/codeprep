@@ -12,6 +12,10 @@ export interface GeneratedQuestion {
     solution?: string;
     testCases?: string[];
     createdAt: number;
+    // Progress tracking
+    status?: 'completed' | 'in-progress' | 'not-started';
+    completedAt?: number;
+    timeSpent?: number; // in seconds
 }
 
 export interface LearningPath {
