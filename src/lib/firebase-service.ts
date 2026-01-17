@@ -179,3 +179,37 @@ export async function getUserQuestions(userId: string): Promise<GeneratedQuestio
         throw new Error('Failed to get questions');
     }
 }
+
+/**
+ * Mark a question as complete within a learning path
+ */
+export async function markQuestionAsComplete(userId: string, pathId: string, questionId: string): Promise<void> {
+    try {
+        // First get the path to find the question index
+        // This is necessary because Firebase Realtime Database arrays are indexed
+        const path = await getLearningPath(userId, pathId);
+
+        if (!path || !path.questions) {
+            throw new Error('Path or questions not found');
+        }
+
+        const questionIndex = path.questions.findIndex(q => q.id === questionId);
+
+        if (questionIndex === -1) {
+            throw new Error('Question not found in path');
+        }
+
+        // Update just the specific question status
+        const questionStatusRef = ref(database, `learningPaths/${userId}/${pathId}/questions/${questionIndex}`);
+
+        // We update the specific fields to avoid overwriting the whole question
+        await update(questionStatusRef, {
+            status: 'completed',
+            completedAt: Date.now()
+        });
+
+    } catch (error) {
+        console.error('Error marking question as complete:', error);
+        throw error;
+    }
+}

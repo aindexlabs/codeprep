@@ -2,7 +2,7 @@ export interface QuestionSet {
     id: string;
     title: string;
     description: string;
-    category: 'JavaScript' | 'TypeScript' | 'React' | 'Infrastructure';
+    category: 'JavaScript' | 'TypeScript' | 'React' | 'Infrastructure' | 'Algorithm';
     difficulty: 'BEGINNER' | 'INTERMEDIATE' | 'ADVANCED' | 'BASIC';
     totalQuestions: number;
     completedQuestions: number;

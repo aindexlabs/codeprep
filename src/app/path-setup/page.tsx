@@ -42,6 +42,7 @@ const techStack = [
     { id: "react", label: "React.js" },
     { id: "react-native", label: "React Native" },
     { id: "nextjs", label: "Next.js" },
+    { id: "algorithm", label: "Algorithm" },
     { id: "system-design", label: "System Design" },
 ];
 
@@ -53,7 +54,7 @@ export default function PathSetupPage() {
     const { user } = useUser();
     const router = useRouter();
     const [selectedLevel, setSelectedLevel] = React.useState("mid-level");
-    const [selectedTech, setSelectedTech] = React.useState<string[]>(["react", "typescript", "system-design"]);
+    const [selectedTech, setSelectedTech] = React.useState<string[]>(["javascript", "typescript"]);
     const [numberOfQuestions, setNumberOfQuestions] = React.useState(DEFAULT_QUESTIONS);
     const [isGenerating, setIsGenerating] = React.useState(false);
     const [generatedQuestions, setGeneratedQuestions] = React.useState<GeneratedQuestion[]>([]);
@@ -250,7 +251,10 @@ export default function PathSetupPage() {
                             </div>
                         </CardContent>
                     </Card>
+                </div>
 
+                {/* Right Column - Generated Questions or Preview */}
+                <div className="space-y-6">
                     {/* AI Recommendation */}
                     <Card className="border-primary/20 bg-gradient-to-br from-card to-primary/5">
                         <CardContent className="p-4 space-y-4">
@@ -287,10 +291,8 @@ export default function PathSetupPage() {
                                 </div>
                             </div>
                         </CardContent>
-                    </Card>                  </div>
+                    </Card>
 
-                {/* Right Column - Generated Questions or Preview */}
-                <div>
                     <Card className="sticky top-6">
                         <CardHeader>
                             <div className="flex items-center justify-between">

@@ -25,6 +25,10 @@ export interface DailyChallenge {
     points: number;
     timeRemaining: string;
     category: string;
+    // Progress tracking
+    status?: 'completed' | 'in-progress' | 'not-started';
+    completedAt?: number;
+    timeSpent?: number; // in seconds
 }
 
 export interface SkillGrowthData {
@@ -208,6 +212,7 @@ export function useDailyChallenge() {
  */
 export function useChallenge(id: string | null, userId: string | null, experienceLevel?: string | null) {
     const [challenge, setChallenge] = useState<GeneratedQuestion | DailyChallenge | null>(null);
+    const [pathId, setPathId] = useState<string | null>(null);
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState<Error | null>(null);
 
@@ -256,8 +261,21 @@ export function useChallenge(id: string | null, userId: string | null, experienc
                         // Flatten all questions from the relevant paths
                         const allQuestions = filteredPaths.flatMap(p => p.questions || []);
 
-                        const found = allQuestions.find(q => q.id === id);
-                        setChallenge(found || null);
+                        // Find the path that contains this question
+                        let foundPathId = null;
+                        let foundQuestion = null;
+
+                        for (const path of filteredPaths) {
+                            const q = path.questions?.find(q => q.id === id);
+                            if (q) {
+                                foundQuestion = q;
+                                foundPathId = path.id;
+                                break;
+                            }
+                        }
+
+                        setChallenge(foundQuestion || null);
+                        setPathId(foundPathId);
                     } else {
                         setChallenge(null);
                     }
@@ -274,7 +292,7 @@ export function useChallenge(id: string | null, userId: string | null, experienc
         }
     }, [id, userId, experienceLevel]);
 
-    return { challenge, loading, error };
+    return { challenge, pathId, loading, error };
 }
 
 /**

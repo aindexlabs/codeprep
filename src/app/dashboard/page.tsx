@@ -23,16 +23,18 @@ export default function DashboardPage() {
     // Convert learning paths to question sets format
     const questionSets = React.useMemo(() => {
         return paths.flatMap(path =>
-            path.questions.map(q => ({
-                id: q.id,
-                title: q.title,
-                description: q.description,
-                category: q.category as 'JavaScript' | 'TypeScript' | 'React' | 'Infrastructure',
-                difficulty: q.difficulty,
-                totalQuestions: path.questions.length,
-                completedQuestions: 0, // TODO: Track completion
-                estimatedTime: '30m', // TODO: Calculate from requirements
-            }))
+            path.questions
+                .filter(q => q.status !== 'completed') // Filter out completed challenges
+                .map(q => ({
+                    id: q.id,
+                    title: q.title,
+                    description: q.description,
+                    category: q.category as 'JavaScript' | 'TypeScript' | 'React' | 'Infrastructure' | 'Algorithm',
+                    difficulty: q.difficulty,
+                    totalQuestions: path.questions.length,
+                    completedQuestions: 0, // TODO: Track completion
+                    estimatedTime: '30m', // TODO: Calculate from requirements
+                }))
         );
     }, [paths]);
 
@@ -185,6 +187,7 @@ export default function DashboardPage() {
                             <TabsTrigger value="typescript">TypeScript</TabsTrigger>
                             <TabsTrigger value="react">React</TabsTrigger>
                             <TabsTrigger value="infrastructure">Infrastructure</TabsTrigger>
+                            <TabsTrigger value="algorithm">Algorithm</TabsTrigger>
                         </TabsList>
                     </div>
 

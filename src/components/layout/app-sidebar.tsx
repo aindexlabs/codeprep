@@ -23,22 +23,29 @@ import {
   Users,
   Trophy,
   Settings,
-  User
+  User,
+  LogOut
 } from "lucide-react";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
 
 const navigationItems = [
   { href: "/dashboard", label: "Dashboard", icon: LayoutDashboard },
   { href: "/path-setup", label: "Path Setup", icon: Map }, // Changed from MapPin
   { href: "/practice", label: "Practice Arena", icon: Code2 },
   { href: "/performance", label: "Performance", icon: BarChart3 }, // Changed from TrendingUp
-  { href: "/mock-interview", label: "Mock Interview", icon: Users },
-  { href: "/leaderboard", label: "Leaderboard", icon: Trophy },
+  // { href: "/mock-interview", label: "Mock Interview", icon: Users },
+  // { href: "/leaderboard", label: "Leaderboard", icon: Trophy },
 ];
 
 export function AppSidebar() {
   const pathname = usePathname();
-  const { user } = useUser();
+  const { user, signOut } = useUser();
 
   return (
     <>
@@ -47,7 +54,7 @@ export function AppSidebar() {
           <CodePrepLogo className="w-8 h-8 text-sidebar-primary" />
           <div className="flex flex-col">
             <h2 className="text-xl font-headline font-semibold text-sidebar-foreground">
-              DevPrep
+              CodePrep
             </h2>
           </div>
         </div>
@@ -86,15 +93,25 @@ export function AppSidebar() {
             </SidebarMenuButton>
           </SidebarMenuItem>
         </SidebarMenu>
-        <div className="flex items-center gap-3 p-4 border-t">
-          <div className="w-10 h-10 rounded-full bg-primary/10 flex items-center justify-center">
-            <User className="w-5 h-5 text-primary" />
-          </div>
-          <div className="flex-1 min-w-0">
-            <p className="text-sm font-medium truncate">{user?.name || 'Developer'}</p>
-            <p className="text-xs text-muted-foreground truncate">{user?.role || 'Student'}</p>
-          </div>
-        </div>
+        <DropdownMenu>
+          <DropdownMenuTrigger asChild>
+            <div className="flex items-center gap-3 p-4 border-t cursor-pointer hover:bg-muted/50 transition-colors">
+              <div className="w-10 h-10 rounded-full bg-primary/10 flex items-center justify-center">
+                <User className="w-5 h-5 text-primary" />
+              </div>
+              <div className="flex-1 min-w-0">
+                <p className="text-sm font-medium truncate">{user?.name || 'Developer'}</p>
+                <p className="text-xs text-muted-foreground truncate">{user?.role || 'Student'}</p>
+              </div>
+            </div>
+          </DropdownMenuTrigger>
+          <DropdownMenuContent align="end" className="w-48">
+            <DropdownMenuItem onClick={() => signOut()} className="text-destructive focus:text-destructive cursor-pointer">
+              <LogOut className="mr-2 h-4 w-4" />
+              <span>Log out</span>
+            </DropdownMenuItem>
+          </DropdownMenuContent>
+        </DropdownMenu>
       </SidebarFooter>
     </>
   );
