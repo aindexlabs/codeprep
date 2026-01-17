@@ -17,10 +17,6 @@ import {
     BookOpen,
     Settings,
     Code,
-    ChevronRight,
-    Search,
-    GripVertical,
-    GripHorizontal,
     CheckCircle2
 } from "lucide-react";
 import { markQuestionAsComplete } from "@/lib/firebase-service";
@@ -30,14 +26,13 @@ import {
     PanelResizeHandle,
 } from "react-resizable-panels";
 import { useUser } from "@/contexts/user-context";
-import { useChallenge } from "@/hooks/use-firebase-data";
+import { useChallenge, useLearningPaths } from "@/hooks/use-firebase-data";
 import {
     SandpackProvider,
     SandpackLayout,
     SandpackCodeEditor,
     SandpackPreview,
     SandpackConsole,
-    SandpackTests,
     SandpackFileExplorer,
 } from "@codesandbox/sandpack-react";
 
@@ -57,16 +52,77 @@ export default function PracticePage() {
 }
 
 function PracticeContent() {
-    const router = useRouter();
     const searchParams = useSearchParams();
     const { user } = useUser();
+
+    // Get challenge ID from URL
+    const challengeId = searchParams.get("id");
+
+    // If no challenge ID, show the list view
+    if (!challengeId) {
+        return <PracticeList user={user} />;
+    }
+
+    // Otherwise show the IDE
+    return <PracticeIDE challengeId={challengeId} user={user} />;
+}
+
+function PracticeList({ user }: { user: any }) {
+    const router = useRouter();
+    const { paths, loading } = useLearningPaths(user?.id || null);
+
+    if (loading) {
+        return (
+            <div className="flex-1 flex items-center justify-center min-h-screen">
+                <Loader2 className="w-8 h-8 animate-spin text-primary" />
+            </div>
+        );
+    }
+
+    const allQuestions = paths.flatMap(p => p.questions || []);
+
+    return (
+        <div className="p-8 max-w-7xl mx-auto space-y-6">
+            <div>
+                <h1 className="text-3xl font-bold mb-2">Practice Challenges</h1>
+                <p className="text-muted-foreground">Select a challenge to start coding</p>
+            </div>
+
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                {allQuestions.map((q) => (
+                    <Card key={q.id} className="hover:border-primary/50 transition-colors cursor-pointer" onClick={() => router.push(`/practice?id=${q.id}`)}>
+                        <CardHeader>
+                            <div className="flex justify-between items-start gap-4">
+                                <CardTitle className="text-lg line-clamp-2">{q.title}</CardTitle>
+                                {q.status === 'completed' && (
+                                    <CheckCircle2 className="w-5 h-5 text-green-500 shrink-0" />
+                                )}
+                            </div>
+                        </CardHeader>
+                        <CardContent>
+                            <p className="text-sm text-muted-foreground line-clamp-3 mb-4">
+                                {q.description}
+                            </p>
+                            <div className="flex items-center gap-2">
+                                <Badge variant="secondary">{q.difficulty}</Badge>
+                                <Badge variant="outline">{q.category}</Badge>
+                            </div>
+                        </CardContent>
+                    </Card>
+                ))}
+            </div>
+        </div>
+    );
+}
+
+function PracticeIDE({ challengeId, user }: { challengeId: string, user: any }) {
+    const router = useRouter();
+    const searchParams = useSearchParams();
     const [isFullscreen, setIsFullscreen] = React.useState(false);
     const [activeSidebarTab, setActiveSidebarTab] = React.useState<"files" | "instructions">("files");
     const [isSidebarVisible, setIsSidebarVisible] = React.useState(true);
     const [isCompleting, setIsCompleting] = React.useState(false);
 
-    // Get challenge ID from URL or default to 'daily'
-    const challengeId = searchParams.get("id") || "daily";
     const experienceLevel = searchParams.get("experienceLevel") || searchParams.get("level");
 
     const { challenge, pathId, loading, error } = useChallenge(challengeId, user?.id || null, experienceLevel);

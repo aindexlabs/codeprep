@@ -17,18 +17,9 @@ export interface UserProgress {
     }[];
 }
 
-export interface DailyChallenge {
-    id: string;
-    title: string;
-    description: string;
-    difficulty: 'BEGINNER' | 'INTERMEDIATE' | 'ADVANCED';
+export interface DailyChallenge extends GeneratedQuestion {
     points: number;
     timeRemaining: string;
-    category: string;
-    // Progress tracking
-    status?: 'completed' | 'in-progress' | 'not-started';
-    completedAt?: number;
-    timeSpent?: number; // in seconds
 }
 
 export interface SkillGrowthData {
@@ -179,32 +170,68 @@ export function useUserProgress(userId: string | null) {
 /**
  * Hook to fetch daily challenge
  */
-export function useDailyChallenge() {
+/**
+ * Hook to fetch daily challenge (derived from learning paths)
+ */
+export function useDailyChallenge(userId: string | null) {
     const [challenge, setChallenge] = useState<DailyChallenge | null>(null);
     const [loading, setLoading] = useState(true);
-    const [error, setError] = useState<Error | null>(null);
+    const { paths, loading: pathsLoading } = useLearningPaths(userId);
 
     useEffect(() => {
-        const challengeRef = ref(database, 'dailyChallenge');
+        if (pathsLoading) return;
 
-        const unsubscribe = onValue(
-            challengeRef,
-            (snapshot) => {
-                if (snapshot.exists()) {
-                    setChallenge(snapshot.val());
-                }
-                setLoading(false);
-            },
-            (err) => {
-                setError(err as Error);
-                setLoading(false);
-            }
-        );
+        if (!paths || paths.length === 0) {
+            setChallenge(null);
+            setLoading(false);
+            return;
+        }
 
-        return () => off(challengeRef, 'value', unsubscribe);
-    }, []);
+        // Get all uncompleted questions
+        const allQuestions = paths.flatMap(p => p.questions || [])
+            .filter(q => q.status !== 'completed');
 
-    return { challenge, loading, error };
+        if (allQuestions.length === 0) {
+            setChallenge(null);
+            setLoading(false);
+            return;
+        }
+
+        // Deterministic selection based on date string
+        // This ensures the same user gets the same question for the whole day
+        const today = new Date().toDateString(); // e.g., "Fri Jan 17 2026"
+
+        // Simple hash of the date string
+        let hash = 0;
+        for (let i = 0; i < today.length; i++) {
+            hash = ((hash << 5) - hash) + today.charCodeAt(i);
+            hash |= 0; // Convert to 32bit integer
+        }
+
+        // Use absolute value of hash to pick index
+        const index = Math.abs(hash) % allQuestions.length;
+        const selectedQuestion = allQuestions[index];
+
+        // Calculate time remaining until end of day
+        const now = new Date();
+        const tomorrow = new Date(now);
+        tomorrow.setDate(tomorrow.getDate() + 1);
+        tomorrow.setHours(0, 0, 0, 0);
+
+        const diffMs = tomorrow.getTime() - now.getTime();
+        const hours = Math.floor(diffMs / (1000 * 60 * 60));
+        const minutes = Math.floor((diffMs % (1000 * 60 * 60)) / (1000 * 60));
+
+        setChallenge({
+            ...selectedQuestion,
+            points: 100, // Fixed points for daily challenge
+            timeRemaining: `${hours}h ${minutes}m`
+        });
+        setLoading(false);
+
+    }, [paths, pathsLoading]);
+
+    return { challenge, loading: loading || pathsLoading, error: null };
 }
 
 /**
@@ -224,25 +251,7 @@ export function useChallenge(id: string | null, userId: string | null, experienc
 
         setLoading(true);
 
-        if (id === 'daily') {
-            const challengeRef = ref(database, 'dailyChallenge');
-            const unsubscribe = onValue(
-                challengeRef,
-                (snapshot) => {
-                    if (snapshot.exists()) {
-                        setChallenge(snapshot.val());
-                    } else {
-                        setChallenge(null);
-                    }
-                    setLoading(false);
-                },
-                (err) => {
-                    setError(err as Error);
-                    setLoading(false);
-                }
-            );
-            return () => off(challengeRef, 'value', unsubscribe);
-        } else if (userId) {
+        if (userId) {
             // Fetch from learning paths
             const learningPathsRef = ref(database, `learningPaths/${userId}`);
 

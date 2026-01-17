@@ -15,7 +15,7 @@ import { useDailyChallenge, useUserProgress, useLearningPaths } from "@/hooks/us
 export default function DashboardPage() {
     const router = useRouter();
     const { user } = useUser();
-    const { challenge, loading: challengeLoading } = useDailyChallenge();
+    const { challenge, loading: challengeLoading } = useDailyChallenge(user?.id || null);
     const { progress, loading: progressLoading } = useUserProgress(user?.id || null);
     const { paths, loading: pathsLoading } = useLearningPaths(user?.id || null);
     const [selectedCategory, setSelectedCategory] = React.useState<string>("all");
@@ -97,7 +97,7 @@ export default function DashboardPage() {
                                 <Button
                                     size="lg"
                                     className="bg-primary hover:bg-primary/90"
-                                    onClick={() => router.push('/practice?id=daily')}
+                                    onClick={() => router.push(`/practice?id=${challenge.id}`)}
                                 >
                                     Start Challenge
                                 </Button>

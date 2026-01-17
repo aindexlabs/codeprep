@@ -7,22 +7,7 @@ import { ref, set } from "firebase/database";
 import { useUser } from "@/contexts/user-context";
 
 // Sample Daily Challenge
-const dailyChallengeData = {
-    id: "daily-1",
-    title: "Implement a Debounce Function",
-    description: `Create a custom hook useDebounce that delays updating a value until a specified time has passed.
-  
-The hook should accept a value and a delay in milliseconds. This is commonly used for search inputs to avoid API calls on every keystroke.
 
-Requirements:
-1. Return the initial value immediately on mount.
-2. Update the returned value only after the delay has passed without value changes.
-3. Ensure you clear the timeout on component unmount or value change.`,
-    difficulty: "INTERMEDIATE",
-    points: 100,
-    timeRemaining: "12h 30m",
-    category: "React Hooks"
-};
 
 // Sample Generated Questions (matching the structure likely used in Learning Paths)
 const sampleQuestions = [
@@ -60,7 +45,16 @@ export default function SeedPage() {
 
         try {
             // Seed Daily Challenge
-            await set(ref(database, "dailyChallenge"), dailyChallengeData);
+            // Pick a random question from sampleQuestions
+            const randomQuestion = sampleQuestions[Math.floor(Math.random() * sampleQuestions.length)];
+            const dailyChallenge = {
+                ...randomQuestion,
+                id: "daily-1", // Keep fixed ID for simplicity in demo
+                points: 100,
+                timeRemaining: "12h 30m"
+            };
+
+            await set(ref(database, "dailyChallenge"), dailyChallenge);
 
             // Seed User Questions (linking to user ID)
             const questionsRef = ref(database, `questions/${user.id}`);

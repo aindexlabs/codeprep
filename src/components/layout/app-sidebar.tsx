@@ -20,13 +20,10 @@ import {
   Map, // Changed from MapPin
   Code2,
   BarChart3, // Changed from TrendingUp
-  Users,
-  Trophy,
   Settings,
   User,
   LogOut
 } from "lucide-react";
-import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import {
   DropdownMenu,
   DropdownMenuContent,
